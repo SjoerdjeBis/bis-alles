@@ -7,6 +7,12 @@ const config = JSON.parse(await readFile(new URL("projects.json", root), "utf8")
 const token = process.env.GH_TOKEN || "";
 const SLOW_MS = 8000;
 const TIMEOUT_MS = 20000;
+// GitHub zet geplande workflows uit na 60 dagen zonder activiteit in een publieke repo.
+const INACTIVE_WARN_DAYS = 45;
+const INACTIVE_ERROR_DAYS = 55;
+// Alarm pas als een project bij zoveel controles op rij een probleem heeft.
+const ALARM_AFTER = 2;
+const PREVIOUS_URL = process.env.PREVIOUS_STATUS_URL || "https://sjoerdjebis.github.io/bis-alles/status.json";
 
 async function gh(path) {
   try {
@@ -44,6 +50,14 @@ async function checkProject(p) {
   const base = `/repos/${owner}/${p.repo}`;
   const problems = [];
   const out = { ...p, problems, checks: [], workflows: [] };
+  out.repoUrl = p.repo ? `https://github.com/${owner}/${p.repo}` : null;
+  delete out.owner;
+
+  // Lokale projecten (niet op GitHub, geen live URL) kunnen we niet controleren.
+  if (!p.repo && !p.live && !p.checks?.length) {
+    out.overall = "local";
+    return out;
+  }
 
   // Live site en extra endpoints (bijv. een Apps Script-backend)
   const targets = [...(p.live ? [{ label: "Live site", url: p.live }] : []), ...(p.checks || [])];
@@ -56,8 +70,10 @@ async function checkProject(p) {
   // Alleen de eigen live-URL hoort op de publieke pagina; backend-URL's niet tonen.
   out.checks = out.checks.map((c) => (c.label === "Live site" ? c : { ...c, url: undefined }));
 
-  const repo = await gh(base);
-  if (!repo.ok) {
+  const repo = p.repo ? await gh(base) : { ok: false, status: -1 };
+  if (repo.status === -1) {
+    // geen repo: alleen de URL-controles tellen
+  } else if (!repo.ok) {
     out.repoAccess = false;
     problems.push({
       level: p.archived ? "warn" : "unknown",
@@ -74,6 +90,7 @@ async function checkProject(p) {
     const branch = p.branch || r.default_branch;
     const commits = await gh(`${base}/commits?per_page=1&sha=${encodeURIComponent(branch)}`);
     const c = commits.data?.[0];
+    if (commits.status === 409) problems.push({ level: "warn", text: "Repo is leeg (nog geen commits)" });
     if (c) {
       out.lastCommit = {
         date: c.commit.committer?.date || c.commit.author?.date,
@@ -84,6 +101,10 @@ async function checkProject(p) {
     }
 
     for (const w of p.workflows || []) {
+      const meta = await gh(`${base}/actions/workflows/${encodeURIComponent(w.file)}`);
+      if (meta.ok && meta.data.state !== "active") {
+        problems.push({ level: "error", text: `${w.name}: uitgeschakeld (${meta.data.state === "disabled_inactivity" ? "60 dagen geen activiteit" : meta.data.state})` });
+      }
       const runs = await gh(`${base}/actions/workflows/${encodeURIComponent(w.file)}/runs?per_page=10`);
       const list = (runs.data?.workflow_runs || []).filter((x) => x.event !== "pull_request");
       const latest = list[0];
@@ -115,6 +136,13 @@ async function checkProject(p) {
       }
     }
 
+    if ((p.workflows || []).some((w) => w.maxAgeHours) && !r.private) {
+      const days = hoursSince(r.pushed_at) / 24;
+      const text = `${Math.round(days)} dagen geen commit: GitHub zet geplande workflows na 60 dagen uit. Doe een commit.`;
+      if (days > INACTIVE_ERROR_DAYS) problems.push({ level: "error", text });
+      else if (days > INACTIVE_WARN_DAYS) problems.push({ level: "warn", text });
+    }
+
     if (p.live?.includes(".github.io")) {
       const pages = await gh(`${base}/pages/builds/latest`);
       if (pages.ok) {
@@ -139,8 +167,8 @@ async function checkProject(p) {
   }
 
   out.overall = p.archived ? "archived" : problems.reduce((acc, x) => worst(acc, x.level), "ok");
-  delete out.owner;
-  out.repoUrl = `https://github.com/${owner}/${p.repo}`;
+  const prev = previous.get(p.id);
+  out.errorStreak = out.overall === "error" ? (prev?.errorStreak || 0) + 1 : 0;
   return out;
 }
 
@@ -149,6 +177,13 @@ function fmtAge(h) {
   return h < 48 ? `${Math.round(h)} uur` : `${Math.round(h / 24)} dagen`;
 }
 
+// Vorige uitslag ophalen van de live site, voor "pas alarm na 2 controles op rij".
+const previous = new Map();
+try {
+  const res = await fetch(PREVIOUS_URL, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+  if (res.ok) for (const p of (await res.json()).projects || []) previous.set(p.id, p);
+} catch {}
+
 const projects = [];
 for (const p of config.projects) projects.push(await checkProject(p));
 
@@ -156,7 +191,7 @@ const status = { generatedAt: new Date().toISOString(), authenticated: Boolean(t
 await writeFile(new URL("site/status.json", root), JSON.stringify(status, null, 2) + "\n");
 
 // Samenvatting voor de Actions-log en het alarm-issue
-const broken = projects.filter((p) => p.overall === "error");
+const broken = projects.filter((p) => p.errorStreak >= ALARM_AFTER);
 const lines = broken.map((p) => `- **${p.name}**: ${p.problems.filter((x) => x.level === "error").map((x) => x.text).join("; ")}`);
 await writeFile(new URL("alerts.md", root), lines.join("\n") + (lines.length ? "\n" : ""));
 if (process.env.GITHUB_STEP_SUMMARY) {

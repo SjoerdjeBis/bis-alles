@@ -98,7 +98,7 @@ h1 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.01em; }
 .pill.ok { background: var(--ok-bg); color: var(--ok); }
 .pill.warn { background: var(--warn-bg); color: var(--warn); }
 .pill.error { background: var(--error-bg); color: var(--error); }
-.pill.unknown, .pill.archived { background: var(--unknown-bg); color: var(--unknown); }
+.pill.unknown, .pill.archived, .pill.local { background: var(--unknown-bg); color: var(--unknown); }
 
 .desc { margin: 0; color: var(--muted); font-size: 0.95rem; }
 
@@ -114,7 +114,7 @@ h1 { margin: 0; font-size: 1.6rem; font-weight: 900; letter-spacing: -0.01em; }
 .facts dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
 .facts .msg { color: var(--muted); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
-.dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.error { background: var(--error); } .dot.unknown { background: var(--unknown); }
+.dot.ok { background: var(--ok); } .dot.warn { background: var(--warn); } .dot.error { background: var(--error); } .dot.unknown, .dot.local { background: var(--unknown); }
 
 .links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; }
 .links a {

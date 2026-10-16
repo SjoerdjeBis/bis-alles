@@ -1,4 +1,4 @@
-const LABEL = { ok: "In orde", warn: "Let op", error: "Probleem", unknown: "Onbekend", archived: "Archief" };
+const LABEL = { ok: "In orde", warn: "Let op", error: "Probleem", unknown: "Onbekend", archived: "Archief", local: "Lokaal" };
 const STALE_HOURS = 3;
 let state = { data: null, filter: "alles" };
 
@@ -79,12 +79,13 @@ function card(p) {
     const msg = p.lastCommit.message ? el("span", { class: "msg" }, ` · ${p.lastCommit.message}`) : null;
     add("Laatste update", p.lastCommit.url ? el("a", { href: p.lastCommit.url }, timeEl(p.lastCommit.date)) : timeEl(p.lastCommit.date), msg);
   }
+  if (p.overall === "local") add("Status", "niet automatisch te controleren (staat niet op GitHub)");
   if (p.openIssues) add("Open issues", el("a", { href: `${p.repoUrl}/issues` }, String(p.openIssues)));
 
   const links = node.querySelector(".links");
   if (p.live) links.append(el("a", { class: "primary", href: p.live }, "Open ↗"));
   for (const l of p.links || []) links.append(el("a", { href: l.url }, l.label));
-  links.append(el("a", { href: p.repoUrl }, "Repo"));
+  if (p.repoUrl) links.append(el("a", { href: p.repoUrl }, "Repo"));
   if (p.workflows?.length) links.append(el("a", { href: `${p.repoUrl}/actions` }, "Actions"));
   return node;
 }
@@ -98,11 +99,11 @@ function render() {
   const active = data.projects.filter((p) => !p.archived);
   const archived = data.projects.filter((p) => p.archived);
 
-  const counts = { ok: 0, warn: 0, error: 0, unknown: 0 };
+  const counts = { ok: 0, warn: 0, error: 0, unknown: 0, local: 0 };
   for (const p of active) counts[p.overall] = (counts[p.overall] || 0) + 1;
   const summary = document.getElementById("summary");
   summary.replaceChildren(
-    ...["ok", "warn", "error", "unknown"].filter((k) => counts[k]).map((k) =>
+    ...["ok", "warn", "error", "unknown", "local"].filter((k) => counts[k]).map((k) =>
       el("span", { class: "count" }, el("span", { class: `dot ${k}` }), el("b", {}, String(counts[k])), ` ${LABEL[k].toLowerCase()}`))
   );
 
@@ -113,9 +114,9 @@ function render() {
     return b;
   }));
 
-  const order = { error: 0, warn: 1, unknown: 2, ok: 3 };
+  const order = { error: 0, warn: 1, unknown: 2, ok: 3, local: 4 };
   const shown = active
-    .filter((p) => filter === "alles" || (filter === "problemen" ? p.overall !== "ok" : p.category === filter))
+    .filter((p) => filter === "alles" || (filter === "problemen" ? ["error", "warn", "unknown"].includes(p.overall) : p.category === filter))
     .sort((a, b) => order[a.overall] - order[b.overall]);
   const grid = document.getElementById("grid");
   grid.replaceChildren(...(shown.length ? shown.map(card) : [el("p", { class: "empty" }, filter === "problemen" ? "Geen problemen 🎉" : "Niets gevonden.")]));

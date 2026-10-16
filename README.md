@@ -10,9 +10,12 @@ Overzicht van al mijn sites, apps en automatiseringen, met status per project.
 - `scripts/check.mjs` controleert elk project: is de live site bereikbaar (en hoe snel), is de
   laatste workflow-run geslaagd en niet te oud (`maxAgeHours`), is de GitHub Pages-build gelukt,
   bestaat de release (bij apps), en wat was de laatste commit. Het resultaat is `site/status.json`.
-- `.github/workflows/status.yml` draait dat elk uur en bij elke push naar `main`, en publiceert
-  `site/` op GitHub Pages. Gaat er iets echt mis, dan opent hij een issue **⚠️ Statusalarm**
-  (GitHub mailt je dan); is alles weer groen, dan sluit hij het issue zelf.
+- `.github/workflows/status.yml` draait dagelijks om 06:50 en 07:50 UTC (en bij elke push naar
+  `main`) en publiceert `site/` op GitHub Pages. Heeft een project bij **twee controles op rij**
+  een probleem, dan opent hij een issue **⚠️ Statusalarm** (GitHub mailt je dan); is alles weer
+  groen, dan sluit hij het issue zelf. De vorige uitslag leest hij van de live `status.json`.
+- Projecten zonder repo en zonder live URL (`local`) staan erop als "Lokaal": die kunnen niet
+  automatisch gecontroleerd worden.
 
 ### Velden in `projects.json`
 

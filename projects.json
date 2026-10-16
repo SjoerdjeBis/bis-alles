@@ -15,8 +15,8 @@
         {
           "file": "status.yml",
           "name": "Status & publiceren",
-          "schedule": "elk uur",
-          "maxAgeHours": 3
+          "schedule": "dagelijks ~08:50 + controle ~09:50",
+          "maxAgeHours": 26
         }
       ]
     },
@@ -147,6 +147,43 @@
       ]
     },
     {
+      "id": "weekmenu",
+      "name": "Bis Weekmenu",
+      "description": "Weekmenu plannen, recepten en boodschappen, gedeeld tussen twee telefoons via Firestore.",
+      "category": "App",
+      "type": "app",
+      "platform": "Android",
+      "repo": null,
+      "live": null,
+      "logo": null,
+      "color": "#2F6B4F",
+      "local": true
+    },
+    {
+      "id": "stappenteller",
+      "name": "Stappenteller",
+      "description": "Staat niet op GitHub.",
+      "category": "App",
+      "type": "app",
+      "repo": null,
+      "live": null,
+      "logo": null,
+      "color": "#C2185B",
+      "local": true
+    },
+    {
+      "id": "schrijfwedstrijden",
+      "name": "Schrijfwedstrijden",
+      "description": "Browserextensie. Staat niet op GitHub.",
+      "category": "Extensie",
+      "type": "extensie",
+      "repo": null,
+      "live": null,
+      "logo": null,
+      "color": "#7A4E2D",
+      "local": true
+    },
+    {
       "id": "voetbalagenda",
       "name": "Voetbalagenda",
       "description": "Zet het voetbalprogramma van Ben in Google Agenda (privé repo).",
@@ -159,15 +196,14 @@
     },
     {
       "id": "tafels-oefenen",
-      "name": "Tafels oefenen (oud)",
-      "description": "Voorloper van Tafels Brawl.",
-      "category": "Archief",
+      "name": "Tafels oefenen",
+      "description": "Tafels oefenen (privé repo).",
+      "category": "Spel",
       "type": "site",
       "repo": "Tafels-oefenen",
       "live": null,
       "logo": null,
-      "color": "#8A8F98",
-      "archived": true
+      "color": "#4A7BB7"
     }
   ]
 }
