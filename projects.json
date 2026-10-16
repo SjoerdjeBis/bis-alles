@@ -149,7 +149,7 @@
     {
       "id": "weekmenu",
       "name": "Bis Weekmenu",
-      "description": "Weekmenu plannen, recepten en boodschappen, gedeeld tussen twee telefoons via Firestore.",
+      "description": "Weekmenu plannen, recepten en boodschappen, gedeeld tussen twee telefoons via Firestore. Lokaal gemaakt.",
       "category": "App",
       "type": "app",
       "platform": "Android",
@@ -162,26 +162,28 @@
     {
       "id": "stappenteller",
       "name": "Stappenteller",
-      "description": "Staat niet op GitHub.",
+      "description": "Widget op het startscherm van de telefoon. Lokaal gemaakt.",
       "category": "App",
       "type": "app",
       "repo": null,
       "live": null,
       "logo": null,
       "color": "#C2185B",
-      "local": true
+      "local": true,
+      "platform": "Android-widget"
     },
     {
       "id": "schrijfwedstrijden",
       "name": "Schrijfwedstrijden",
-      "description": "Browserextensie. Staat niet op GitHub.",
+      "description": "Lokaal geladen Chrome-extensie, niet in de Web Store.",
       "category": "Extensie",
       "type": "extensie",
       "repo": null,
       "live": null,
       "logo": null,
       "color": "#7A4E2D",
-      "local": true
+      "local": true,
+      "platform": "Chrome"
     },
     {
       "id": "voetbalagenda",
@@ -193,17 +195,6 @@
       "live": null,
       "logo": null,
       "color": "#3C7A3B"
-    },
-    {
-      "id": "tafels-oefenen",
-      "name": "Tafels oefenen",
-      "description": "Tafels oefenen (privé repo).",
-      "category": "Spel",
-      "type": "site",
-      "repo": "Tafels-oefenen",
-      "live": null,
-      "logo": null,
-      "color": "#4A7BB7"
     }
   ]
 }
