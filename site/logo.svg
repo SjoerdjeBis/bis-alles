@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Bis Overzicht: drie crème tegels en één groene statusstip op inktblauw, in de stijl van de andere Bis-logo's. -->
+  <rect width="64" height="64" rx="14" fill="#2E3A59"/>
+  <g fill="#F4ECDD">
+    <rect x="13" y="13" width="17" height="17" rx="4"/>
+    <rect x="34" y="13" width="17" height="17" rx="4"/>
+    <rect x="13" y="34" width="17" height="17" rx="4"/>
+  </g>
+  <circle cx="42.5" cy="42.5" r="8.5" fill="#4CC38A"/>
+</svg>
