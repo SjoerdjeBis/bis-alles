@@ -1,0 +1,173 @@
+{
+  "owner": "SjoerdjeBis",
+  "projects": [
+    {
+      "id": "bis-alles",
+      "name": "Bis Overzicht",
+      "description": "Deze pagina: alle sites en apps op één plek, met status.",
+      "category": "Tool",
+      "type": "site",
+      "repo": "bis-alles",
+      "live": "https://sjoerdjebis.github.io/bis-alles/",
+      "logo": "logo.svg",
+      "color": "#2E3A59",
+      "workflows": [
+        {
+          "file": "status.yml",
+          "name": "Status & publiceren",
+          "schedule": "elk uur",
+          "maxAgeHours": 3
+        }
+      ]
+    },
+    {
+      "id": "leeslijst",
+      "name": "Bis Leeslijst",
+      "description": "Goodreads-leeslijst naast de collectie van Bibliotheek Westervoort.",
+      "category": "Tool",
+      "type": "site",
+      "repo": "leeslijst",
+      "live": "https://sjoerdjebis.github.io/leeslijst/",
+      "logo": "https://sjoerdjebis.github.io/leeslijst/favicon.svg",
+      "color": "#1E5F66",
+      "workflows": [
+        {
+          "file": "vernieuw.yml",
+          "name": "Vernieuw beschikbaarheid",
+          "schedule": "elke nacht ~05:15",
+          "maxAgeHours": 26
+        }
+      ]
+    },
+    {
+      "id": "cinemagazine-database",
+      "name": "Cinemagazine Filmwaarderingen",
+      "description": "Ruim 19.000 recensies met filters, sortering en IMDb/TMDB-info.",
+      "category": "Tool",
+      "type": "site",
+      "repo": "cinemagazine-database",
+      "live": "https://sjoerdjebis.github.io/cinemagazine-database/",
+      "logo": "https://sjoerdjebis.github.io/cinemagazine-database/icons/favicon.svg",
+      "color": "#6E2639",
+      "workflows": [
+        {
+          "file": "update-data.yml",
+          "name": "Recensies bijwerken",
+          "schedule": "dagelijks ~07:17",
+          "maxAgeHours": 26
+        }
+      ]
+    },
+    {
+      "id": "duivencompetitie",
+      "name": "Duivencompetitie",
+      "description": "Tourpoule voor duiven: tussenstand, uitslag invoeren en seizoen voorbereiden.",
+      "category": "Poule",
+      "type": "site",
+      "repo": "duivencompetitie",
+      "live": "https://sjoerdjebis.github.io/duivencompetitie/",
+      "logo": "https://sjoerdjebis.github.io/duivencompetitie/assets/logo.png",
+      "color": "#2F6D56",
+      "checks": [
+        {
+          "label": "Apps Script (Google Sheet)",
+          "url": "https://script.google.com/macros/s/AKfycbyVlL3TGQX2IY3yBG4v5RD4w7bQmfqx3cazGVSm60Ei1yndms0WEvyIfm-fAnYP7Dliyw/exec"
+        }
+      ]
+    },
+    {
+      "id": "tourpoule",
+      "name": "Bissusconi Tourpoule",
+      "description": "De jaarlijkse tourpoule, inclusief Wrapped-terugblik.",
+      "category": "Poule",
+      "type": "site",
+      "repo": "tourpoule",
+      "live": "https://sjoerdjebis.github.io/tourpoule/",
+      "logo": "logos/tourpoule.svg",
+      "color": "#141414"
+    },
+    {
+      "id": "tafels-brawl",
+      "name": "Tafels Brawl",
+      "description": "Tafels oefenen voor 8-jarigen: twee thema's, drie speelmodi, adaptief leren.",
+      "category": "Spel",
+      "type": "site",
+      "repo": "tafels-brawl",
+      "live": "https://sjoerdjebis.github.io/tafels-brawl/",
+      "logo": "https://sjoerdjebis.github.io/tafels-brawl/icon-192.png",
+      "color": "#F2B705"
+    },
+    {
+      "id": "topo-nederland",
+      "name": "Topo Nederland",
+      "description": "Interactieve topografie-toets van Nederland voor groep 5/6.",
+      "category": "Spel",
+      "type": "site",
+      "repo": "topo-nederland",
+      "live": "https://sjoerdjebis.github.io/topo-nederland/",
+      "logo": null,
+      "color": "#E07A1F"
+    },
+    {
+      "id": "ballon-schieter",
+      "name": "Ballon Schieter",
+      "description": "Schiet ballonnen met pijl en boog.",
+      "category": "Spel",
+      "type": "site",
+      "repo": "ballon-schieter",
+      "live": "https://sjoerdjebis.github.io/ballon-schieter/",
+      "logo": "https://sjoerdjebis.github.io/ballon-schieter/icon-192.png",
+      "color": "#D64550"
+    },
+    {
+      "id": "bis-screensavert",
+      "name": "Bis Screensavert",
+      "description": "Eigen screensaver voor Chromecast met Google TV; werkt zichzelf bij via GitHub-release.",
+      "category": "App",
+      "type": "app",
+      "repo": "bis-screensavert",
+      "live": "https://sjoerdjebis.github.io/bis-screensavert/",
+      "logo": "logos/bis-screensavert.png",
+      "color": "#3B2A5C",
+      "platform": "Google TV",
+      "branch": "claude/elegant-brown-wn493w",
+      "release": "laatste",
+      "workflows": [
+        {
+          "file": "build.yml",
+          "name": "Bouw Bis ScreenSaver",
+          "schedule": "bij elke push"
+        }
+      ],
+      "links": [
+        {
+          "label": "Download APK",
+          "url": "https://github.com/SjoerdjeBis/bis-screensavert/releases/tag/laatste"
+        }
+      ]
+    },
+    {
+      "id": "voetbalagenda",
+      "name": "Voetbalagenda",
+      "description": "Zet het voetbalprogramma van Ben in Google Agenda (privé repo).",
+      "category": "Automatisering",
+      "type": "automatisering",
+      "repo": "voetbalagenda",
+      "live": null,
+      "logo": null,
+      "color": "#3C7A3B"
+    },
+    {
+      "id": "tafels-oefenen",
+      "name": "Tafels oefenen (oud)",
+      "description": "Voorloper van Tafels Brawl.",
+      "category": "Archief",
+      "type": "site",
+      "repo": "Tafels-oefenen",
+      "live": null,
+      "logo": null,
+      "color": "#8A8F98",
+      "archived": true
+    }
+  ]
+}

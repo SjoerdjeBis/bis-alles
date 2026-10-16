@@ -1,0 +1,65 @@
+name: Status & publiceren
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "7 * * * *"   # elk uur
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  issues: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Alle projecten controleren
+        run: node scripts/check.mjs
+        env:
+          # STATUS_TOKEN (fine-grained, alleen-lezen) is nodig voor privérepo's en Pages-status;
+          # zonder valt hij terug op het standaardtoken (alleen publieke repo's).
+          GH_TOKEN: ${{ secrets.STATUS_TOKEN || github.token }}
+
+      - name: Alarm-issue openen of sluiten
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh label create status-alarm --color C53D3D --description "Automatisch statusalarm" --force >/dev/null
+          open=$(gh issue list --label status-alarm --state open --json number --jq '.[0].number')
+          if [ -s alerts.md ]; then
+            if [ -z "$open" ]; then
+              { echo "Er is iets mis met een of meer projecten:"; echo; cat alerts.md; echo; echo "Zie https://sjoerdjebis.github.io/bis-alles/"; } > body.md
+              gh issue create --title "⚠️ Statusalarm" --label status-alarm --body-file body.md
+            fi
+          elif [ -n "$open" ]; then
+            gh issue close "$open" --comment "Alles weer in orde ✅"
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: check
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

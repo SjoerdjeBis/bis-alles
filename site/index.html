@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bis Overzicht</title>
+  <meta name="description" content="Alle sites, apps en automatiseringen van Bis op één plek, met status.">
+  <meta name="theme-color" content="#2E3A59">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="logo-180.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="logo.svg" alt="" width="44" height="44">
+      <div>
+        <h1>Bis Overzicht</h1>
+        <p class="sub">Alle sites, apps en automatiseringen</p>
+      </div>
+    </div>
+    <div class="summary" id="summary" aria-live="polite">Laden…</div>
+  </header>
+
+  <div class="stale" id="stale" hidden></div>
+
+  <nav class="filters" id="filters" aria-label="Filter"></nav>
+
+  <main class="grid" id="grid"></main>
+
+  <details class="archive" id="archive" hidden>
+    <summary>Archief</summary>
+    <div class="grid" id="archive-grid"></div>
+  </details>
+
+  <footer class="foot">
+    <span id="checked"></span>
+    <a href="https://github.com/SjoerdjeBis/bis-alles/actions/workflows/status.yml">Nu opnieuw controleren ↗</a>
+  </footer>
+
+  <template id="card">
+    <article class="card">
+      <div class="head">
+        <span class="logo"></span>
+        <div class="title">
+          <h2></h2>
+          <span class="meta"></span>
+        </div>
+        <span class="pill"></span>
+      </div>
+      <p class="desc"></p>
+      <ul class="problems"></ul>
+      <dl class="facts"></dl>
+      <div class="links"></div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
