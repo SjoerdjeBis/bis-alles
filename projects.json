@@ -194,7 +194,15 @@
       "repo": "voetbalagenda",
       "live": null,
       "logo": null,
-      "color": "#3C7A3B"
+      "color": "#3C7A3B",
+      "workflows": [
+        {
+          "file": "sync.yml",
+          "name": "Voetbalagenda sync",
+          "schedule": "elk uur",
+          "maxAgeHours": 6
+        }
+      ]
     }
   ]
 }
