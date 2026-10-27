@@ -1,6 +1,6 @@
 // Controleert alle projecten uit projects.json en schrijft site/status.json.
 // Draait elk uur in GitHub Actions; lokaal: `node scripts/check.mjs` (GH_TOKEN optioneel).
-import { readFile, writeFile, appendFile } from "node:fs/promises";
+import { readFile, writeFile, appendFile, mkdir } from "node:fs/promises";
 
 const root = new URL("..", import.meta.url);
 const config = JSON.parse(await readFile(new URL("projects.json", root), "utf8"));
@@ -67,7 +67,7 @@ async function checkProject(p) {
     else if (r.ms > SLOW_MS) problems.push({ level: "warn", text: `${t.label} traag (${(r.ms / 1000).toFixed(1)} s)` });
     out.checks.push(r);
   }
-  // Alleen de eigen live-URL hoort op de publieke pagina; backend-URL's niet tonen.
+  // Alleen de eigen live-URL hoort in de publieke status.json; backend-URL's niet tonen.
   out.checks = out.checks.map((c) => (c.label === "Live site" ? c : { ...c, url: undefined }));
 
   const repo = p.repo ? await gh(base) : { ok: false, status: -1 };
@@ -188,6 +188,7 @@ const projects = [];
 for (const p of config.projects) projects.push(await checkProject(p));
 
 const status = { generatedAt: new Date().toISOString(), authenticated: Boolean(token), projects };
+await mkdir(new URL("site/", root), { recursive: true });
 await writeFile(new URL("site/status.json", root), JSON.stringify(status, null, 2) + "\n");
 
 // Samenvatting voor de Actions-log en het alarm-issue
