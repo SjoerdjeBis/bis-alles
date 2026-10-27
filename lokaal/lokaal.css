@@ -1,0 +1,29 @@
+.bar { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 18px; }
+.bar .filters { margin: 0; }
+#search {
+  font: inherit; font-size: 0.95rem; padding: 7px 14px; border-radius: 999px; width: min(100%, 240px);
+  border: 1px solid var(--line); background: var(--card); color: var(--ink);
+}
+#search:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
+
+.group { display: grid; gap: 6px; }
+.group h3 { margin: 0; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.btns { display: flex; flex-wrap: wrap; gap: 6px; }
+.btns button, .btns a {
+  font: inherit; font-size: 0.85rem; font-weight: 700; text-decoration: none; cursor: pointer;
+  padding: 6px 12px; border-radius: 10px; border: 1px solid var(--line); background: transparent; color: var(--ink);
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.btns button:hover, .btns a:hover { border-color: var(--ink); }
+.btns .primary { background: var(--brand); border-color: var(--brand); color: #F4ECDD; }
+.btns .run::before { content: "▶ "; font-size: 0.75em; }
+.btns .quiet { color: var(--muted); font-weight: 600; }
+
+.gitline { font-size: 0.85rem; color: var(--muted); }
+.gitline .warn { color: var(--warn); font-weight: 700; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); max-width: calc(100% - 32px);
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.9rem;
+}
+.toast.error { background: var(--error); color: #fff; }

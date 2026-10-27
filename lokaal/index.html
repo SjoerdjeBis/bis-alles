@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bis Alles</title>
+  <meta name="theme-color" content="#2E3A59">
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="lokaal.css">
+  <meta name="bis-token" content="__TOKEN__">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="logo.svg" alt="" width="44" height="44">
+      <div>
+        <h1>Bis Alles</h1>
+        <p class="sub" id="root">Alles wat ik gemaakt heb</p>
+      </div>
+    </div>
+    <div class="summary" id="summary" aria-live="polite">Laden…</div>
+  </header>
+
+  <div class="bar">
+    <input type="search" id="search" placeholder="Zoeken…  ( / )" aria-label="Zoeken" autocomplete="off">
+    <nav class="filters" id="filters" aria-label="Filter"></nav>
+  </div>
+
+  <main class="grid" id="grid"></main>
+
+  <footer class="foot">
+    <span id="checked"></span>
+    <a href="https://sjoerdjebis.github.io/bis-alles/" target="_blank">Online statuspagina ↗</a>
+  </footer>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="lokaal.js"></script>
+</body>
+</html>
