@@ -130,7 +130,6 @@
       "logo": "logos/bis-screensavert.png",
       "color": "#3B2A5C",
       "platform": "Google TV",
-      "branch": "claude/elegant-brown-wn493w",
       "release": "laatste",
       "workflows": [
         {
