@@ -14,8 +14,8 @@ Overzicht van al mijn sites, apps en automatiseringen, met status per project.
   `main`) en publiceert `site/` op GitHub Pages. Heeft een project bij **twee controles op rij**
   een probleem, dan opent hij een issue **⚠️ Statusalarm** (GitHub mailt je dan); is alles weer
   groen, dan sluit hij het issue zelf. De vorige uitslag leest hij van de live `status.json`.
-- Projecten zonder repo en zonder live URL (`local`) staan erop als "Lokaal": die kunnen niet
-  automatisch gecontroleerd worden.
+- Lokale projecten (zonder repo of live URL) staan hier niet, maar alleen in het lokale
+  dashboard hieronder.
 
 ### Velden in `projects.json`
 
@@ -31,6 +31,27 @@ Overzicht van al mijn sites, apps en automatiseringen, met status per project.
 | `release` | Tag van een GitHub-release die moet bestaan (apps) |
 | `links` | Extra knoppen, bijv. een store-pagina |
 | `platform`, `archived` | Bijv. `Google TV`; `archived: true` zet het project onder Archief |
+
+## Lokaal dashboard
+
+`lokaal/` is een dashboard voor op je eigen Mac, met alles uit `~/Desktop/claude`: per project
+knoppen om de juiste commands te starten en de sites te openen (lokaal of online), plus de online
+status van hierboven en de git-status (niet gecommit of niet gepusht).
+
+- **Starten:** dubbelklik `lokaal/Bis Alles.command`. Het dashboard opent op http://localhost:8787.
+  Het Terminal-venster moet openblijven zolang je het gebruikt. Alleen `python3` is nodig.
+- **Wat hij zelf vindt:** per map de `.command`-bestanden, Python-scripts, `npm run`-scripts en
+  HTML-bestanden (ook één map dieper), plus de git-repo. Een nieuwe map verschijnt dus vanzelf.
+  Een `.command` of HTML opent met `open`; Python en npm draaien in een nieuw Terminal-venster.
+- **Naam, beschrijving en categorie** komen uit `projects.json` en uit
+  `lokaal/projecten-lokaal.json`. Dat laatste bestand staat alleen op je Mac (het staat in
+  `.gitignore`) en bevat de lokale projecten, in hetzelfde formaat als `projects.json` plus een
+  veld `folder` (de mapnaam in `~/Desktop/claude`). Een blok met een `id` uit `projects.json`
+  vult dat project aan, bijvoorbeeld `{"id": "tourpoule", "folder": "Tourpoule"}`. Mappen met een
+  GitHub-repo worden vanzelf gekoppeld. Een map zonder blok staat onder "Overig". Mappen die je
+  niet wilt zien, zet je in `negeren`.
+- **Beveiliging:** de server luistert alleen op localhost en voert alleen acties uit die hij zelf
+  in de map gevonden heeft, met een token dat andere websites niet kunnen lezen.
 
 ## Eenmalig instellen
 

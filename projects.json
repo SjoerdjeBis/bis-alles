@@ -146,45 +146,6 @@
       ]
     },
     {
-      "id": "weekmenu",
-      "name": "Bis Weekmenu",
-      "description": "Weekmenu plannen, recepten en boodschappen, gedeeld tussen twee telefoons via Firestore. Lokaal gemaakt.",
-      "category": "App",
-      "type": "app",
-      "platform": "Android",
-      "repo": null,
-      "live": null,
-      "logo": null,
-      "color": "#2F6B4F",
-      "local": true
-    },
-    {
-      "id": "stappenteller",
-      "name": "Stappenteller",
-      "description": "Widget op het startscherm van de telefoon. Lokaal gemaakt.",
-      "category": "App",
-      "type": "app",
-      "repo": null,
-      "live": null,
-      "logo": null,
-      "color": "#C2185B",
-      "local": true,
-      "platform": "Android-widget"
-    },
-    {
-      "id": "schrijfwedstrijden",
-      "name": "Schrijfwedstrijden",
-      "description": "Lokaal geladen Chrome-extensie, niet in de Web Store.",
-      "category": "Extensie",
-      "type": "extensie",
-      "repo": null,
-      "live": null,
-      "logo": null,
-      "color": "#7A4E2D",
-      "local": true,
-      "platform": "Chrome"
-    },
-    {
       "id": "voetbalagenda",
       "name": "Voetbalagenda",
       "description": "Zet het voetbalprogramma van Ben in Google Agenda (privé repo).",
