@@ -3,12 +3,12 @@
   "projects": [
     {
       "id": "bis-alles",
-      "name": "Bis Overzicht",
-      "description": "Deze pagina: alle sites en apps op één plek, met status.",
+      "name": "Bis Alles",
+      "description": "Dit dashboard. De dagelijkse statuscontrole publiceert status.json op GitHub Pages.",
       "category": "Tool",
       "type": "site",
       "repo": "bis-alles",
-      "live": "https://sjoerdjebis.github.io/bis-alles/",
+      "live": null,
       "logo": "logo.svg",
       "color": "#2E3A59",
       "workflows": [
@@ -17,6 +17,12 @@
           "name": "Status & publiceren",
           "schedule": "dagelijks ~08:50 + controle ~09:50",
           "maxAgeHours": 26
+        }
+      ],
+      "checks": [
+        {
+          "label": "status.json",
+          "url": "https://sjoerdjebis.github.io/bis-alles/status.json"
         }
       ]
     },

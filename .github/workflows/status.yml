@@ -45,7 +45,7 @@ jobs:
           open=$(gh issue list --label status-alarm --state open --json number --jq '.[0].number')
           if [ -s alerts.md ]; then
             if [ -z "$open" ]; then
-              { echo "Er is iets mis met een of meer projecten:"; echo; cat alerts.md; echo; echo "Zie https://sjoerdjebis.github.io/bis-alles/"; } > body.md
+              { echo "Er is iets mis met een of meer projecten:"; echo; cat alerts.md; echo; echo "Zie ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"; } > body.md
               gh issue create --title "⚠️ Statusalarm" --label status-alarm --body-file body.md
             fi
           elif [ -n "$open" ]; then

@@ -25,7 +25,6 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parent
-SITE = REPO / "site"
 PORT = 8787
 TOKEN = secrets.token_urlsafe(24)
 
@@ -38,8 +37,8 @@ MAX_HTML = 12
 STATIC = {
     "/lokaal.js": (HERE / "lokaal.js", "text/javascript"),
     "/lokaal.css": (HERE / "lokaal.css", "text/css"),
-    "/style.css": (SITE / "style.css", "text/css"),
-    "/logo.svg": (SITE / "logo.svg", "image/svg+xml"),
+    "/style.css": (HERE / "style.css", "text/css"),
+    "/logo.svg": (HERE / "logo.svg", "image/svg+xml"),
 }
 
 
@@ -222,8 +221,8 @@ class Handler(BaseHTTPRequestHandler):
             file, ctype = STATIC[path]
             return self.send(200, file.read_bytes(), ctype)
         if path.startswith("/logos/"):
-            file = (SITE / path.lstrip("/")).resolve()
-            if file.is_file() and file.is_relative_to(SITE / "logos"):
+            file = (HERE / path.lstrip("/")).resolve()
+            if file.is_file() and file.is_relative_to(HERE / "logos"):
                 return self.send(200, file.read_bytes(), "image/svg+xml" if file.suffix == ".svg" else "image/png")
         self.send(404, {"error": "niet gevonden"})
 
