@@ -93,6 +93,17 @@
       "color": "#141414"
     },
     {
+      "id": "nevelrijk",
+      "name": "Nevelrijk",
+      "description": "Point-and-click avontuur in de geest van Kyrandia, voor kinderen vanaf 8: zes hoofdstukken, puzzels, keuzes en drie eindes.",
+      "category": "Spel",
+      "type": "site",
+      "repo": "nevelrijk",
+      "live": "https://sjoerdjebis.github.io/nevelrijk/",
+      "logo": "https://sjoerdjebis.github.io/nevelrijk/icon.svg",
+      "color": "#0D1426"
+    },
+    {
       "id": "tafels-brawl",
       "name": "Tafels Brawl",
       "description": "Tafels oefenen voor 8-jarigen: twee thema's, drie speelmodi, adaptief leren.",
