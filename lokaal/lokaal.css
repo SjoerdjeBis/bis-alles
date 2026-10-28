@@ -27,3 +27,13 @@
   background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.9rem;
 }
 .toast.error { background: var(--error); color: #fff; }
+
+.primary-action { display: grid; gap: 4px; }
+.go {
+  font: inherit; font-size: 1rem; font-weight: 800; text-align: center; text-decoration: none; cursor: pointer;
+  padding: 10px 16px; border-radius: 12px; border: 0; background: var(--brand); color: #F4ECDD;
+}
+.go:hover { filter: brightness(1.15); }
+.primary-action .target { font-size: 0.8rem; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+.more-body { display: grid; gap: 10px; }
+.more summary { cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; }

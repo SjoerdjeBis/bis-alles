@@ -49,6 +49,11 @@ status uit `status.json` en de git-status (niet gecommit of niet gepusht).
   vult dat project aan, bijvoorbeeld `{"id": "tourpoule", "folder": "Tourpoule"}`. Mappen met een
   GitHub-repo worden vanzelf gekoppeld. Een map zonder blok staat onder "Overig". Mappen die je
   niet wilt zien, zet je in `negeren`.
+- **Hoofdactie:** elke kaart heeft één grote knop om mee aan de slag te gaan; de rest staat onder
+  "Meer". Zonder instelling kiest hij zelf: de online site, anders het enige `.command`-bestand,
+  anders `index.html` of het enige HTML-bestand, anders `npm run dev`/`start`. Wil je iets anders,
+  zet dan `start` in `projecten-lokaal.json`: een bestand in de map (`"Typecursus.html"`, een
+  `.command`, `.py`, `.xlsx`, `.pptx` …), `"npm:dev"`, `"live"` of een `https://`-adres.
 - **Beveiliging:** de server luistert alleen op localhost en voert alleen acties uit die hij zelf
   in de map gevonden heeft, met een token dat andere websites niet kunnen lezen.
 

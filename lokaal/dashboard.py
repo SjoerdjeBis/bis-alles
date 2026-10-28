@@ -114,6 +114,36 @@ def scan(folder):
     return actions, html[:MAX_HTML], gits
 
 
+def primary(p, folder, actions, html):
+    """De ene actie om mee aan de slag te gaan: `start` uit de config, anders een gok."""
+    start = p.get("start")
+    if start and start.startswith("https://"):
+        return {"kind": "live", "target": start, "label": "Openen"}
+    if start == "live" or (not start and p.get("live")) or folder is None:
+        return {"kind": "live", "target": p.get("live"), "label": "Online openen"} if p.get("live") else None
+    if start and start.startswith("npm:"):
+        return next((dict(a, label="Starten") for a in actions
+                     if a["kind"] == "npm" and a["target"].endswith("::" + start[4:])), None)
+    if start:
+        file = (folder / start).resolve()
+        if not (file.is_file() and file.is_relative_to(folder.resolve())):
+            return None
+        kind = {".command": "command", ".py": "python", ".html": "html"}.get(file.suffix, "file")
+        label = {"command": file.stem, "python": "Starten"}.get(kind, "Openen")
+        return {"kind": kind, "target": start, "label": label}
+    commands = [a for a in actions if a["kind"] == "command"]
+    if len(commands) == 1:
+        return commands[0]
+    top = [h for h in html if "/" not in h["target"]]
+    index = [h for h in top if h["target"] == "index.html"]
+    if index or len(top) == 1:
+        return dict((index or top)[0], label="Openen")
+    npm = [a for a in actions if a["kind"] == "npm"]
+    if npm and npm[0]["target"].split("::")[1] in ("dev", "start"):
+        return dict(npm[0], label="Starten")
+    return None
+
+
 def projects(root):
     config = load_config()
     skip = set(config["negeren"])
@@ -135,14 +165,14 @@ def projects(root):
         p = dict(meta or {"id": f"map:{folder.name}", "name": folder.name, "category": "Overig"})
         if meta:
             used.add(meta["id"])
-        p.update(folder=folder.name, actions=actions, html=html,
+        p.update(folder=folder.name, actions=actions, html=html, primary=primary(p, folder, actions, html),
                  git=[{"path": str(path.relative_to(folder)), **g} for path, g in gits])
         out.append(p)
 
     # Projecten die alleen online staan (geen map op het bureaublad).
     for p in entries:
         if p["id"] not in used and (p.get("repo") or p.get("live")) and not p.get("archived"):
-            out.append({**p, "folder": None, "actions": [], "html": [], "git": []})
+            out.append({**p, "folder": None, "actions": [], "html": [], "git": [], "primary": primary(p, None, [], [])})
 
     order = {p["id"]: i for i, p in enumerate(entries)}
     out.sort(key=lambda p: (order.get(p["id"], len(order)), p["name"].lower()))
@@ -174,11 +204,13 @@ def run(root, folder_name, kind, target):
         return opener(str(folder))
     if kind == "terminal":
         return opener("-a", "Terminal", str(folder))
-    actions, html, _ = scan(folder)
-    allowed = {(a["kind"], a["target"]) for a in actions + html}
-    if (kind, target) not in allowed:
+    p = next((p for p in projects(root) if p["folder"] == folder.name), None)
+    if not p:
+        raise ValueError("onbekende map")
+    allowed = {(a["kind"], a["target"]) for a in p["actions"] + p["html"] + [p["primary"] or {}] if a}
+    if (kind, target) not in allowed or kind == "live":
         raise ValueError("onbekende actie")
-    if kind in ("command", "html"):
+    if kind in ("command", "html", "file"):
         return opener(str(folder / target))
     if kind == "python":
         return in_terminal(folder, f"python3 {shlex.quote(target)}")
