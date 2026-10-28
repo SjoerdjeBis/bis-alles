@@ -83,15 +83,27 @@ function card(p) {
     node.append(ul);
   }
 
-  const group = (title, ...buttons) => buttons.length && node.append(el("div", { class: "group" }, el("h3", {}, title), el("div", { class: "btns" }, ...buttons)));
+  const pr = p.primary;
+  const same = (a) => pr && a.kind === pr.kind && a.target === pr.target;
+  if (pr) {
+    const main = pr.kind === "live"
+      ? el("a", { class: "go", href: pr.target, target: "_blank" }, `${pr.label} ↗`)
+      : el("button", { class: "go", type: "button", onclick: () => run(p, pr.kind, pr.target, pr.label) }, `▶ ${pr.label}`);
+    const what = pr.kind === "live" ? null : pr.kind === "npm" ? `npm run ${pr.target.split("::")[1]}` : pr.target;
+    node.append(el("div", { class: "primary-action" }, main, what ? el("span", { class: "target" }, what) : null));
+  }
 
-  group("Starten", ...p.actions.map((a) => el("button", { class: "run", type: "button", title: a.target, onclick: () => run(p, a.kind, a.target, a.label) }, a.label)));
-
+  // De rest staat ingeklapt onder "Meer", zodat de hoofdactie opvalt.
+  const more = el("div", { class: "more-body" });
+  const group = (title, ...buttons) => buttons.length && more.append(el("div", { class: "group" }, el("h3", {}, title), el("div", { class: "btns" }, ...buttons)));
+  group("Starten", ...p.actions.filter((a) => !same(a)).map((a) => el("button", { class: "run", type: "button", title: a.target, onclick: () => run(p, a.kind, a.target, a.label) }, a.label)));
   const open = [];
-  if (p.live) open.push(el("a", { class: "primary", href: p.live, target: "_blank" }, "Online ↗"));
+  if (p.live && pr?.kind !== "live") open.push(el("a", { href: p.live, target: "_blank" }, "Online ↗"));
   for (const l of p.links || []) open.push(el("a", { href: l.url, target: "_blank" }, l.label));
-  for (const h of p.html) open.push(el("button", { type: "button", title: h.target, onclick: () => run(p, h.kind, h.target, h.label) }, h.label));
+  for (const h of p.html.filter((h) => !same(h))) open.push(el("button", { type: "button", title: h.target, onclick: () => run(p, h.kind, h.target, h.label) }, h.label));
   group("Openen", ...open);
+  const n = more.querySelectorAll("button, a").length;
+  if (n) node.append(pr ? el("details", { class: "more" }, el("summary", {}, `Meer (${n})`), more) : more);
 
   const tools = [];
   if (p.folder) {
