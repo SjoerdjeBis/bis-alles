@@ -149,7 +149,9 @@
           "label": "Download APK",
           "url": "https://github.com/SjoerdjeBis/bis-screensavert/releases/tag/laatste"
         }
-      ]
+      ],
+      "start": "https://github.com/SjoerdjeBis/bis-screensavert/releases/tag/laatste",
+      "startLabel": "Download APK"
     },
     {
       "id": "voetbalagenda",

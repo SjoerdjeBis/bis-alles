@@ -6,8 +6,6 @@
 }
 #search:focus { outline: 2px solid var(--brand); outline-offset: 1px; }
 
-.group { display: grid; gap: 6px; }
-.group h3 { margin: 0; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
 .btns { display: flex; flex-wrap: wrap; gap: 6px; }
 .btns button, .btns a {
   font: inherit; font-size: 0.85rem; font-weight: 700; text-decoration: none; cursor: pointer;
@@ -35,5 +33,14 @@
 }
 .go:hover { filter: brightness(1.15); }
 .primary-action .target { font-size: 0.8rem; color: var(--muted); text-align: center; overflow-wrap: anywhere; }
-.more-body { display: grid; gap: 10px; }
-.more summary { cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--muted); margin-bottom: 8px; }
+.btns.compact { gap: 4px; }
+.btns.compact button, .btns.compact a { font-size: 0.78rem; padding: 3px 9px; border-radius: 8px; }
+
+.top-right { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.update {
+  font: inherit; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+  padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink);
+}
+.update:hover { border-color: var(--ink); }
+.update.new { background: var(--brand); border-color: var(--brand); color: #F4ECDD; }
+.update:disabled { opacity: 0.6; cursor: wait; }

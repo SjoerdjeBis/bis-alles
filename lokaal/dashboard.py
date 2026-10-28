@@ -33,6 +33,7 @@ SKIP_DIRS = {"node_modules", "build", "dist", ".next", ".git", "gradle", "app", 
              "Oud", "lib", "src", "kit", "beeld", "icons", "fonts", "logo", "logos", "__pycache__", ".venv", "venv"}
 NPM_FIRST = ["dev", "start", "preview", "build"]
 MAX_HTML = 12
+OPEN_DELAY = 4  # seconden wachten tot een lokale server draait voordat `open` de pagina opent
 
 STATIC = {
     "/lokaal.js": (HERE / "lokaal.js", "text/javascript"),
@@ -117,6 +118,15 @@ def scan(folder):
 def primary(p, folder, actions, html):
     """De ene actie om mee aan de slag te gaan: `start` uit de config, anders een gok."""
     start = p.get("start")
+    if start is False:
+        return None
+    pr = _primary(p, folder, actions, html, start)
+    if pr and p.get("startLabel"):
+        pr["label"] = p["startLabel"]
+    return pr
+
+
+def _primary(p, folder, actions, html, start):
     if start and start.startswith("https://"):
         return {"kind": "live", "target": start, "label": "Openen"}
     if start == "live" or (not start and p.get("live")) or folder is None:
@@ -210,6 +220,9 @@ def run(root, folder_name, kind, target):
     allowed = {(a["kind"], a["target"]) for a in p["actions"] + p["html"] + [p["primary"] or {}] if a}
     if (kind, target) not in allowed or kind == "live":
         raise ValueError("onbekende actie")
+    # `open` in de config: na het starten van de hoofdactie die pagina openen (bijv. localhost).
+    if p["primary"] and (kind, target) == (p["primary"]["kind"], p["primary"]["target"]) and p.get("open"):
+        threading.Timer(OPEN_DELAY, opener, [p["open"]]).start()
     if kind in ("command", "html", "file"):
         return opener(str(folder / target))
     if kind == "python":
@@ -220,6 +233,26 @@ def run(root, folder_name, kind, target):
         install = "" if (cwd / "node_modules").exists() else "npm install && "
         return in_terminal(cwd, f"{install}npm run {shlex.quote(script)}")
     raise ValueError("onbekende actie")
+
+
+def git_repo(*args):
+    r = subprocess.run(["git", "-C", str(REPO), *args], capture_output=True, text=True, timeout=60)
+    return r.returncode, (r.stdout + r.stderr).strip()
+
+
+def update_check():
+    """Hoeveel commits op GitHub staan die hier nog niet zijn."""
+    code, out = git_repo("fetch", "--quiet")
+    if code:
+        return {"behind": 0, "error": out or "git fetch mislukt"}
+    code, out = git_repo("rev-list", "--count", "HEAD..@{u}")
+    return {"behind": int(out) if code == 0 and out.isdigit() else 0}
+
+
+def restart():
+    # Zelfde proces opnieuw starten met de nieuwe code; het tabblad herlaadt zichzelf.
+    args = [a for a in sys.argv[1:] if a != "--no-browser"] + ["--no-browser"]
+    os.execv(sys.executable, [sys.executable, str(HERE / "dashboard.py"), *args])
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -247,6 +280,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/":
             html = (HERE / "index.html").read_text("utf-8").replace("__TOKEN__", TOKEN)
             return self.send(200, html.encode(), "text/html")
+        if path == "/api/update-check":
+            return self.send(200, update_check())
         if path == "/api/projects":
             return self.send(200, {"root": str(self.root), "projects": projects(self.root)})
         if path in STATIC:
@@ -261,8 +296,17 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         # Het token staat alleen in de pagina die deze server zelf uitlevert; andere sites
         # kunnen het niet lezen en geen eigen headers meesturen.
-        if not self.local_host() or self.headers.get("X-Token") != TOKEN or self.path != "/api/run":
+        if not self.local_host() or self.headers.get("X-Token") != TOKEN or self.path not in ("/api/run", "/api/update"):
             return self.send(403, {"error": "niet toegestaan"})
+        if self.path == "/api/update":
+            code, out = git_repo("pull", "--ff-only")
+            if code:
+                return self.send(500, {"error": out.splitlines()[-1] if out else "git pull mislukt"})
+            updated = "Already up to date" not in out and "Al bijgewerkt" not in out
+            self.send(200, {"updated": updated})
+            if updated:
+                threading.Timer(0.5, restart).start()
+            return
         try:
             body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
             run(self.root, body["folder"], body["kind"], body.get("target"))
