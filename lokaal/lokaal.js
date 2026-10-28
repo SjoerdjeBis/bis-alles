@@ -93,17 +93,14 @@ function card(p) {
     node.append(el("div", { class: "primary-action" }, main, what ? el("span", { class: "target" }, what) : null));
   }
 
-  // De rest staat ingeklapt onder "Meer", zodat de hoofdactie opvalt.
-  const more = el("div", { class: "more-body" });
-  const group = (title, ...buttons) => buttons.length && more.append(el("div", { class: "group" }, el("h3", {}, title), el("div", { class: "btns" }, ...buttons)));
-  group("Starten", ...p.actions.filter((a) => !same(a)).map((a) => el("button", { class: "run", type: "button", title: a.target, onclick: () => run(p, a.kind, a.target, a.label) }, a.label)));
-  const open = [];
-  if (p.live && pr?.kind !== "live") open.push(el("a", { href: p.live, target: "_blank" }, "Online ↗"));
-  for (const l of p.links || []) open.push(el("a", { href: l.url, target: "_blank" }, l.label));
-  for (const h of p.html.filter((h) => !same(h))) open.push(el("button", { type: "button", title: h.target, onclick: () => run(p, h.kind, h.target, h.label) }, h.label));
-  group("Openen", ...open);
-  const n = more.querySelectorAll("button, a").length;
-  if (n) node.append(pr ? el("details", { class: "more" }, el("summary", {}, `Meer (${n})`), more) : more);
+  // Overige acties compact in één rij onder de hoofdknop.
+  const rest = [
+    ...p.actions.filter((a) => !same(a)).map((a) => el("button", { class: "run", type: "button", title: a.target, onclick: () => run(p, a.kind, a.target, a.label) }, a.label)),
+    ...(p.live && pr?.kind !== "live" ? [el("a", { href: p.live, target: "_blank" }, "Online ↗")] : []),
+    ...(p.links || []).filter((l) => !(pr?.kind === "live" && pr.target === l.url)).map((l) => el("a", { href: l.url, target: "_blank" }, l.label)),
+    ...p.html.filter((h) => !same(h)).map((h) => el("button", { type: "button", title: h.target, onclick: () => run(p, h.kind, h.target, h.label) }, h.label)),
+  ];
+  if (rest.length) node.append(el("div", { class: "btns compact" }, ...rest));
 
   const tools = [];
   if (p.folder) {
@@ -113,7 +110,7 @@ function card(p) {
   const repo = p.repo || p.git.find((g) => g.repo)?.repo;
   if (repo) tools.push(el("a", { class: "quiet", href: `https://github.com/SjoerdjeBis/${repo}`, target: "_blank" }, "GitHub"));
   if (p.workflows?.length && repo) tools.push(el("a", { class: "quiet", href: `https://github.com/SjoerdjeBis/${repo}/actions`, target: "_blank" }, "Runs"));
-  if (tools.length) node.append(el("div", { class: "btns" }, ...tools));
+  if (tools.length) node.append(el("div", { class: "btns compact" }, ...tools));
 
   for (const g of p.git) {
     const bits = [];
@@ -165,6 +162,43 @@ async function loadStatus() {
   render();
 }
 
+async function checkUpdate() {
+  try {
+    const { behind } = await (await fetch("/api/update-check", { cache: "no-store" })).json();
+    const b = document.getElementById("update");
+    b.classList.toggle("new", behind > 0);
+    b.textContent = behind > 0 ? `Bijwerken (${behind} nieuw)` : "Bijwerken";
+  } catch {}
+}
+
+async function update() {
+  const b = document.getElementById("update");
+  b.disabled = true;
+  b.textContent = "Bijwerken…";
+  try {
+    const res = await fetch("/api/update", { method: "POST", headers: { "X-Token": TOKEN } });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    if (!data.updated) {
+      toast("Al de nieuwste versie");
+      b.disabled = false;
+      return checkUpdate();
+    }
+    toast("Bijgewerkt, herstarten…");
+    // Wachten tot de herstarte server weer antwoordt, dan herladen (nieuw token, nieuwe code).
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 500));
+      try { if ((await fetch("/api/projects", { cache: "no-store" })).ok) return location.reload(); } catch {}
+    }
+    toast("Herstarten lukt niet; start Bis Alles opnieuw.", true);
+  } catch (e) {
+    toast(`Bijwerken mislukt: ${e.message}`, true);
+    b.disabled = false;
+    b.textContent = "Bijwerken";
+  }
+}
+
+document.getElementById("update").onclick = update;
 try { state.filter = localStorage.getItem("bis-lokaal-filter") || "alles"; } catch {}
 document.getElementById("search").oninput = (e) => { state.query = e.target.value; render(); };
 document.addEventListener("keydown", (e) => {
@@ -172,4 +206,5 @@ document.addEventListener("keydown", (e) => {
 });
 // Bij terugkomen naar het tabblad opnieuw inlezen (nieuwe mappen, git-status).
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
+checkUpdate();
 load().then(loadStatus).catch(() => (document.getElementById("summary").textContent = "Kan de lokale server niet bereiken."));
