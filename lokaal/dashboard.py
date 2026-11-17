@@ -50,12 +50,15 @@ def load_config():
     local = HERE / "projecten-lokaal.json"
     extra = json.loads(local.read_text("utf-8")) if local.exists() else {}
     by_id = {p["id"]: p for p in config["projects"]}
+    for p in config["projects"]:
+        p.pop("commands", None)  # eigen commands draaien alleen vanuit het lokale bestand
     for p in extra.get("projects", []):
         if p["id"] in by_id:
             by_id[p["id"]].update(p)  # bijv. alleen een `folder` bij een online project
         else:
             config["projects"].append(p)
     config["negeren"] = extra.get("negeren", [])
+    config["categorieen"] = extra.get("categorieen", [])
     return config
 
 
@@ -124,18 +127,26 @@ def scan(folder):
     return actions, html[:MAX_HTML], gits, newest
 
 
-def primary(p, folder, actions, html):
-    """De ene actie om mee aan de slag te gaan: `start` uit de config, anders een gok."""
-    start = p.get("start")
-    if start is False:
+def primary(p, folder, actions, html, key="start"):
+    """De ene actie om mee aan de slag te gaan: `start` uit de config, anders een gok.
+    Met key="start2" de tweede knop; die wordt nooit gegokt."""
+    start = p.get(key)
+    if start is False or (key != "start" and not start):
         return None
     pr = _primary(p, folder, actions, html, start)
-    if pr and p.get("startLabel"):
-        pr["label"] = p["startLabel"]
+    label = p.get("startLabel" if key == "start" else key + "Label")
+    if pr and label:
+        pr["label"] = label
     return pr
 
 
 def _primary(p, folder, actions, html, start):
+    if start and start.startswith("cmd:"):
+        return next((a for a in actions if a["kind"] == "cmd" and a["target"] == start[4:]), None)
+    if start and start.startswith("chrome://"):
+        return {"kind": "chrome", "target": start, "label": "Openen in Chrome"}
+    if start == "map" and folder is not None:
+        return {"kind": "finder", "target": None, "label": "Map openen"}
     if start and start.startswith("https://"):
         return {"kind": "live", "target": start, "label": "Openen"}
     if start == "live" or (not start and p.get("live")) or folder is None:
@@ -184,7 +195,10 @@ def projects(root):
         p = dict(meta or {"id": f"map:{folder.name}", "name": folder.name, "category": "Overig"})
         if meta:
             used.add(meta["id"])
+        # Eigen commands uit projecten-lokaal.json: {"label": ..., "run": ...}, draaien in Terminal in de map.
+        actions = actions + [{"kind": "cmd", "target": c["label"], "label": c["label"]} for c in p.get("commands", [])]
         p.update(folder=folder.name, actions=actions, html=html, primary=primary(p, folder, actions, html),
+                 secondary=primary(p, folder, actions, html, "start2"),
                  git=[{"path": str(path.relative_to(folder)), **g} for path, g in gits],
                  # Laatst gewijzigd: nieuwste bestand of commit. Gemaakt: eerste commit of aanmaakdatum map.
                  # (bij git telt de bestandsdatum alleen bij niet-gecommitte wijzigingen; een pull zet die ook)
@@ -199,6 +213,7 @@ def projects(root):
     for p in entries:
         if p["id"] not in used and (p.get("repo") or p.get("live")) and not p.get("archived"):
             out.append({**p, "folder": None, "actions": [], "html": [], "git": [], "primary": primary(p, None, [], []),
+                        "secondary": primary(p, None, [], [], "start2"),
                         "modified": None, "created": None})
 
     order = {p["id"]: i for i, p in enumerate(entries)}
@@ -234,7 +249,7 @@ def run(root, folder_name, kind, target):
     p = next((p for p in projects(root) if p["folder"] == folder.name), None)
     if not p:
         raise ValueError("onbekende map")
-    allowed = {(a["kind"], a["target"]) for a in p["actions"] + p["html"] + [p["primary"] or {}] if a}
+    allowed = {(a["kind"], a["target"]) for a in p["actions"] + p["html"] + [p["primary"] or {}, p["secondary"] or {}] if a}
     if (kind, target) not in allowed or kind == "live":
         raise ValueError("onbekende actie")
     # `open` in de config: na het starten van de hoofdactie die pagina openen (bijv. localhost).
@@ -242,6 +257,10 @@ def run(root, folder_name, kind, target):
         threading.Timer(OPEN_DELAY, opener, [p["open"]]).start()
     if kind in ("command", "html", "file"):
         return opener(str(folder / target))
+    if kind == "chrome":
+        return opener("-a", "Google Chrome", target)
+    if kind == "cmd":
+        return in_terminal(folder, next(c["run"] for c in p["commands"] if c["label"] == target))
     if kind == "python":
         return in_terminal(folder, f"python3 {shlex.quote(target)}")
     if kind == "npm":
@@ -300,7 +319,8 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/update-check":
             return self.send(200, update_check())
         if path == "/api/projects":
-            return self.send(200, {"root": str(self.root), "projects": projects(self.root)})
+            return self.send(200, {"root": str(self.root), "projects": projects(self.root),
+                                   "categorieen": load_config()["categorieen"]})
         if path in STATIC:
             file, ctype = STATIC[path]
             return self.send(200, file.read_bytes(), ctype)
