@@ -1,7 +1,7 @@
 const TOKEN = document.querySelector('meta[name="bis-token"]').content;
 const STATUS_URL = "https://sjoerdjebis.github.io/bis-alles/status.json";
 const LABEL = { ok: "In orde", warn: "Let op", error: "Probleem", unknown: "Onbekend", local: "Lokaal" };
-let state = { projects: [], status: new Map(), statusAt: null, filter: "alles", query: "", sort: "gewijzigd", statusFilter: null, open: new Set(), cats: [] };
+let state = { projects: [], status: new Map(), statusAt: null, filter: "alles", query: "", sort: "gewijzigd", dir: 1, statusFilter: null, open: new Set(), cats: [] };
 
 const rtf = new Intl.RelativeTimeFormat("nl", { numeric: "auto" });
 function ago(iso) {
@@ -78,12 +78,22 @@ function created(p) {
   return ts.length ? Math.min(...ts) : NaN;
 }
 
+const SEVERITY = { error: 0, warn: 1, unknown: 2, ok: 3, local: 4 };
 const SORTS = {
-  gewijzigd: { label: "Laatst gewijzigd", cmp: (a, b) => (modified(b) || 0) - (modified(a) || 0) },
-  gemaakt: { label: "Eerst gemaakt", cmp: (a, b) => (created(a) || Infinity) - (created(b) || Infinity) },
-  naam: { label: "A–Z", cmp: (a, b) => a.name.localeCompare(b.name, "nl") },
-  categorie: { label: "Categorie", cmp: (a, b) => catIndex(a.category) - catIndex(b.category) || a.name.localeCompare(b.name, "nl") },
+  naam: (a, b) => a.name.localeCompare(b.name, "nl"),
+  categorie: (a, b) => catIndex(a.category) - catIndex(b.category) || a.name.localeCompare(b.name, "nl"),
+  status: (a, b) => SEVERITY[overall(a)] - SEVERITY[overall(b)] || (dirty(b) - dirty(a)),
+  gewijzigd: (a, b) => modified(b) - modified(a),
+  gemaakt: (a, b) => created(a) - created(b),
 };
+// Projecten zonder datum staan altijd onderaan, in welke richting je ook sorteert.
+const NO_DATE = { gewijzigd: (p) => isNaN(modified(p)), gemaakt: (p) => isNaN(created(p)) };
+function compare(a, b) {
+  const missing = NO_DATE[state.sort];
+  if (missing && missing(a) !== missing(b)) return missing(a) ? 1 : -1;
+  if (missing && missing(a)) return a.name.localeCompare(b.name, "nl");
+  return state.dir * SORTS[state.sort](a, b) || a.name.localeCompare(b.name, "nl");
+}
 // Volgorde van categorieën uit projecten-lokaal.json; onbekende achteraan.
 const catIndex = (c) => { const i = state.cats.indexOf(c); return i < 0 ? 999 : i; };
 
@@ -95,8 +105,8 @@ function actionButton(p, pr, cls) {
 }
 function primaryButtons(p) {
   return el("span", { class: "acts" },
-    p.secondary ? actionButton(p, p.secondary, "go2") : null,
-    p.primary ? actionButton(p, p.primary, "go") : el("span", { class: "go-none" }, "—"));
+    p.primary ? actionButton(p, p.primary, "go") : el("span", { class: "go-none" }, "—"),
+    p.secondary ? actionButton(p, p.secondary, "go2") : null);
 }
 
 function details(p) {
@@ -144,33 +154,60 @@ function details(p) {
   return box;
 }
 
-function row(p) {
+// Kort, zodat het in de kolom past: "13 min", "3 dagen", "5 mnd".
+function short(t) {
+  const m = (Date.now() - t) / 60000;
+  if (m < 1) return "zojuist";
+  if (m < 60) return `${Math.round(m)} min`;
+  if (m < 1440) return `${Math.round(m / 60)} uur`;
+  const d = m / 1440;
+  if (d < 14) return `${Math.round(d)} ${Math.round(d) === 1 ? "dag" : "dagen"}`;
+  if (d < 60) return `${Math.round(d / 7)} wk`;
+  if (d < 365) return `${Math.round(d / 30.4)} mnd`;
+  return `${Math.round(d / 365)} jr`;
+}
+const monthYear = (t) => new Date(t).toLocaleDateString("nl-NL", { month: "short", year: "numeric" });
+
+function rows(p) {
   const s = state.status.get(p.id);
   const o = overall(p);
   const open = state.open.has(p.id);
-  const node = el("article", { class: `row${open ? " open" : ""}`, "data-status": o });
   const toggle = () => { open ? state.open.delete(p.id) : state.open.add(p.id); render(); };
 
-  // Belangrijkste status: het eerste probleem, anders een git-waarschuwing.
+  // Belangrijkste status: het eerste probleem, anders een git-waarschuwing. Altijd op één regel.
   const problem = o !== "ok" && s?.problems?.find((x) => x.level === "error") || s?.problems?.find((x) => x.level === "warn");
   const g = p.git.find((x) => x.changes || x.ahead);
-  const note = problem ? el("span", { class: `note ${problem.level}` }, problem.text)
-    : g ? el("span", { class: "note warn" }, g.ahead ? "niet gepusht" : "niet gecommit") : null;
-  const meta = [...new Set([p.category, p.platform].filter(Boolean))].join(" · ");
-  const sortKey = state.sort === "gemaakt" ? created(p) : modified(p);
-  const date = isNaN(sortKey) ? "–" : ago(new Date(sortKey).toISOString());
+  const noteText = problem ? problem.text : g ? (g.ahead ? "niet gepusht" : "niet gecommit") : "";
+  const noteLevel = problem ? problem.level : "warn";
+  const m = modified(p), c = created(p);
 
-  node.append(
-    el("button", { class: "row-main", type: "button", "aria-expanded": String(open), onclick: toggle },
-      logo(p),
-      el("span", { class: "title" }, el("span", { class: "name" }, p.name), el("span", { class: "meta" }, meta, note ? " · " : null, note))),
-    el("span", { class: `pill ${o}` }, LABEL[o] || o),
-    el("span", { class: "when", title: state.sort === "gemaakt" ? "gemaakt" : "laatst gewijzigd" }, date),
-    primaryButtons(p),
-    el("button", { class: "chev", type: "button", "aria-label": open ? "Inklappen" : "Uitklappen", "aria-expanded": String(open), onclick: toggle }, open ? "▾" : "▸"),
-  );
-  if (open) node.append(details(p));
-  return node;
+  const tr = el("tr", { class: `prow${open ? " open" : ""}`, "data-status": o },
+    el("td", {}, el("button", { class: "row-main", type: "button", "aria-expanded": String(open), onclick: toggle, title: p.description || p.name },
+      logo(p), el("span", { class: "name" }, p.name))),
+    el("td", { class: "cat" }, p.category),
+    el("td", { class: "status", title: noteText || LABEL[o] },
+      el("span", { class: `pill ${o}` }, LABEL[o] || o),
+      noteText ? el("span", { class: `note ${noteLevel}` }, noteText) : null),
+    el("td", { class: "when", title: isNaN(m) ? null : new Date(m).toLocaleString("nl-NL") }, isNaN(m) ? "–" : short(m)),
+    el("td", { class: "when", title: isNaN(c) ? null : new Date(c).toLocaleDateString("nl-NL") }, isNaN(c) ? "–" : monthYear(c)),
+    el("td", {}, primaryButtons(p)),
+    el("td", {}, el("button", { class: "chev", type: "button", "aria-label": open ? "Inklappen" : "Meer tonen", "aria-expanded": String(open), onclick: toggle }, open ? "▾" : "⋯")));
+  return open ? [tr, el("tr", { class: "drow" }, el("td", { colspan: "7" }, details(p)))] : [tr];
+}
+
+function header() {
+  const col = (key, label) => {
+    const active = state.sort === key;
+    return el("th", { "aria-sort": active ? (state.dir === 1 ? "ascending" : "descending") : null },
+      key ? el("button", { type: "button", class: active ? "on" : null, onclick: () => {
+        state.dir = active ? -state.dir : 1;
+        state.sort = key;
+        save("bis-lokaal-sort", `${key}:${state.dir}`);
+        render();
+      } }, label, active ? (state.dir === 1 ? " ↓" : " ↑") : null) : label);
+  };
+  return el("thead", {}, el("tr", {}, col("naam", "Project"), col("categorie", "Categorie"), col("status", "Status"),
+    col("gewijzigd", "Gewijzigd"), col("gemaakt", "Gemaakt"), col(null, "Acties"), el("th", {})));
 }
 
 function render() {
@@ -190,16 +227,18 @@ function render() {
   document.getElementById("filters").replaceChildren(...cats.map((c) =>
     el("button", { type: "button", "aria-pressed": String(c === filter), onclick: () => { state.filter = c; save("bis-lokaal-filter", c); render(); } },
       c.charAt(0).toUpperCase() + c.slice(1))));
-  document.getElementById("sort").replaceChildren(...Object.entries(SORTS).map(([k, v]) =>
-    el("button", { type: "button", "aria-pressed": String(k === state.sort), onclick: () => { state.sort = k; save("bis-lokaal-sort", k); render(); } }, v.label)));
 
   const q = query.trim().toLowerCase();
   const shown = projects.filter((p) =>
     (filter === "alles" || p.category === filter) &&
     (!statusFilter || (statusFilter === "dirty" ? dirty(p) : overall(p) === statusFilter)) &&
     (!q || [p.name, p.description, p.folder, p.category].join(" ").toLowerCase().includes(q)))
-    .sort((a, b) => SORTS[state.sort].cmp(a, b) || a.name.localeCompare(b.name, "nl"));
-  document.getElementById("list").replaceChildren(...(shown.length ? shown.map(row) : [el("p", { class: "empty" }, "Niets gevonden.")]));
+    .sort(compare);
+  document.getElementById("list").replaceChildren(shown.length
+    ? el("table", { class: "tbl" },
+        el("colgroup", {}, ...["c-proj", "c-cat", "c-status", "c-when", "c-made", "c-acts", "c-more"].map((c) => el("col", { class: c }))),
+        header(), el("tbody", {}, ...shown.flatMap(rows)))
+    : el("p", { class: "empty" }, "Niets gevonden."));
   document.getElementById("checked").textContent = state.statusAt ? `Online status van ${ago(state.statusAt)}` : "Online status niet beschikbaar";
 }
 
@@ -263,7 +302,8 @@ document.getElementById("update").onclick = update;
 try {
   state.filter = localStorage.getItem("bis-lokaal-filter") || "alles";
   if (state.filter === "problemen") state.filter = "alles";
-  if (SORTS[localStorage.getItem("bis-lokaal-sort")]) state.sort = localStorage.getItem("bis-lokaal-sort");
+  const [k, d] = (localStorage.getItem("bis-lokaal-sort") || "").split(":");
+  if (SORTS[k]) { state.sort = k; state.dir = d === "-1" ? -1 : 1; }
 } catch {}
 document.getElementById("search").oninput = (e) => { state.query = e.target.value; render(); };
 document.addEventListener("keydown", (e) => {
