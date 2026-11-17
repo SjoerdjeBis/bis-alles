@@ -20,6 +20,7 @@ import sys
 import tempfile
 import threading
 import webbrowser
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -73,7 +74,12 @@ def git_info(path):
         "changes": len(status.splitlines()) if status else 0,
         "ahead": int(ahead) if ahead and ahead.isdigit() else 0,
         "lastCommit": git("log", "-1", "--format=%cI"),
+        "firstCommit": (git("log", "--reverse", "--format=%cI") or "").split("\n")[0] or None,
     }
+
+
+def iso(ts):
+    return datetime.fromtimestamp(ts, timezone.utc).isoformat() if ts else None
 
 
 def scan(folder):
@@ -81,6 +87,7 @@ def scan(folder):
     places = [folder] + sorted(d for d in folder.iterdir()
                                if d.is_dir() and not d.name.startswith(".") and d.name not in SKIP_DIRS)
     actions, html, gits = [], [], []
+    newest = 0
 
     def rel(p):
         return str(p.relative_to(folder))
@@ -93,6 +100,8 @@ def scan(folder):
         if (place / ".git").exists():
             gits.append((place, git_info(place)))
         for f in files:
+            if not f.name.startswith("."):
+                newest = max(newest, f.stat().st_mtime)
             if f.suffix == ".command":
                 actions.append({"kind": "command", "target": rel(f), "label": f.stem})
             elif f.suffix == ".py" and i == 0:
@@ -112,7 +121,7 @@ def scan(folder):
 
     # index.html eerst, dan de map zelf voor submappen.
     html.sort(key=lambda h: (Path(h["target"]).name != "index.html", "/" in h["target"], h["target"].lower()))
-    return actions, html[:MAX_HTML], gits
+    return actions, html[:MAX_HTML], gits, newest
 
 
 def primary(p, folder, actions, html):
@@ -165,7 +174,7 @@ def projects(root):
     folders = sorted((d for d in root.iterdir() if d.is_dir() and not d.name.startswith(".") and d.name not in skip),
                      key=lambda d: d.name.lower()) if root.is_dir() else []
     for folder in folders:
-        actions, html, gits = scan(folder)
+        actions, html, gits, newest = scan(folder)
         meta = by_folder.get(folder.name)
         for _, g in gits:
             if not meta and g["repo"] in by_repo:
@@ -176,13 +185,21 @@ def projects(root):
         if meta:
             used.add(meta["id"])
         p.update(folder=folder.name, actions=actions, html=html, primary=primary(p, folder, actions, html),
-                 git=[{"path": str(path.relative_to(folder)), **g} for path, g in gits])
+                 git=[{"path": str(path.relative_to(folder)), **g} for path, g in gits],
+                 # Laatst gewijzigd: nieuwste bestand of commit. Gemaakt: eerste commit of aanmaakdatum map.
+                 # (bij git telt de bestandsdatum alleen bij niet-gecommitte wijzigingen; een pull zet die ook)
+                 modified=max([iso(newest) if not gits or any(g["changes"] for _, g in gits) else None]
+                              + [g["lastCommit"] for _, g in gits if g["lastCommit"]],
+                              key=lambda d: datetime.fromisoformat(d) if d else datetime.min.replace(tzinfo=timezone.utc)),
+                 created=min([iso(getattr(folder.stat(), "st_birthtime", 0))] + [g["firstCommit"] for _, g in gits if g["firstCommit"]],
+                             key=lambda d: datetime.fromisoformat(d) if d else datetime.max.replace(tzinfo=timezone.utc)))
         out.append(p)
 
     # Projecten die alleen online staan (geen map op het bureaublad).
     for p in entries:
         if p["id"] not in used and (p.get("repo") or p.get("live")) and not p.get("archived"):
-            out.append({**p, "folder": None, "actions": [], "html": [], "git": [], "primary": primary(p, None, [], [])})
+            out.append({**p, "folder": None, "actions": [], "html": [], "git": [], "primary": primary(p, None, [], []),
+                        "modified": None, "created": None})
 
     order = {p["id"]: i for i, p in enumerate(entries)}
     out.sort(key=lambda p: (order.get(p["id"], len(order)), p["name"].lower()))

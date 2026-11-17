@@ -84,6 +84,7 @@ async function checkProject(p) {
     out.repoAccess = true;
     out.private = r.private;
     out.pushedAt = r.pushed_at;
+    out.createdAt = r.created_at;
     out.openIssues = r.open_issues_count;
     out.defaultBranch = r.default_branch;
 

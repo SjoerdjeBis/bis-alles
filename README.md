@@ -49,6 +49,11 @@ status uit `status.json` en de git-status (niet gecommit of niet gepusht).
   vult dat project aan, bijvoorbeeld `{"id": "tourpoule", "folder": "Tourpoule"}`. Mappen met een
   GitHub-repo worden vanzelf gekoppeld. Een map zonder blok staat onder "Overig". Mappen die je
   niet wilt zien, zet je in `negeren`.
+- **Lijst:** één regel per project met de belangrijkste status, de datum en de hoofdactie; klik
+  op een regel voor de rest (beschrijving, problemen, overige acties, git). Sorteren kan op
+  laatst gewijzigd (laatste commit, of het nieuwste bestand bij een map zonder git of met
+  niet-gecommitte wijzigingen), eerst gemaakt (eerste commit of aanmaakdatum van de map) en A–Z.
+  De statusknoppen bovenin zijn filters; nog een keer klikken zet het filter uit.
 - **Hoofdactie:** elke kaart heeft één grote knop om mee aan de slag te gaan; de rest staat onder
   "Meer". Zonder instelling kiest hij zelf: de online site, anders het enige `.command`-bestand,
   anders `index.html` of het enige HTML-bestand, anders `npm run dev`/`start`. Wil je iets anders,
