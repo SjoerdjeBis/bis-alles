@@ -211,7 +211,8 @@ function header() {
 }
 
 function render() {
-  const { projects, filter, query, statusFilter } = state;
+  const { projects, query, statusFilter } = state;
+  let { filter } = state;
   const counts = {};
   for (const p of projects) counts[overall(p)] = (counts[overall(p)] || 0) + 1;
   const nDirty = projects.filter(dirty).length;
@@ -224,6 +225,8 @@ function render() {
     ...(nDirty ? [chip("dirty", nDirty, "niet opgeslagen", "warn")] : []));
 
   const cats = ["alles", ...[...new Set(projects.map((p) => p.category))].sort((a, b) => catIndex(a) - catIndex(b))];
+  // Een onthouden filter op een categorie die niet meer bestaat, zou alles verbergen.
+  if (!cats.includes(filter)) { filter = state.filter = "alles"; save("bis-lokaal-filter", "alles"); }
   document.getElementById("filters").replaceChildren(...cats.map((c) =>
     el("button", { type: "button", "aria-pressed": String(c === filter), onclick: () => { state.filter = c; save("bis-lokaal-filter", c); render(); } },
       c.charAt(0).toUpperCase() + c.slice(1))));
