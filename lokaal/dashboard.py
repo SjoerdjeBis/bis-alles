@@ -82,6 +82,11 @@ def git_info(path):
     }
 
 
+def parse(d, fallback):
+    # Python 3.9 (macOS) leest geen "Z" aan het eind; git schrijft dat bij UTC-commits.
+    return datetime.fromisoformat(d.replace("Z", "+00:00")) if d else fallback
+
+
 def iso(ts):
     return datetime.fromtimestamp(ts, timezone.utc).isoformat() if ts else None
 
@@ -205,9 +210,9 @@ def projects(root):
                  # (bij git telt de bestandsdatum alleen bij niet-gecommitte wijzigingen; een pull zet die ook)
                  modified=max([iso(newest) if not gits or any(g["changes"] for _, g in gits) else None]
                               + [g["lastCommit"] for _, g in gits if g["lastCommit"]],
-                              key=lambda d: datetime.fromisoformat(d) if d else datetime.min.replace(tzinfo=timezone.utc)),
+                              key=lambda d: parse(d, datetime.min.replace(tzinfo=timezone.utc))),
                  created=min([iso(getattr(folder.stat(), "st_birthtime", 0))] + [g["firstCommit"] for _, g in gits if g["firstCommit"]],
-                             key=lambda d: datetime.fromisoformat(d) if d else datetime.max.replace(tzinfo=timezone.utc)))
+                             key=lambda d: parse(d, datetime.max.replace(tzinfo=timezone.utc))))
         out.append(p)
 
     # Projecten die alleen online staan (geen map op het bureaublad).
