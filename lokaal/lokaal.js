@@ -245,8 +245,11 @@ function render() {
 function save(key, value) { try { localStorage.setItem(key, value); } catch {} }
 
 async function load() {
-  const res = await fetch("/api/projects", { cache: "no-store" });
-  const data = await res.json();
+  let res;
+  try { res = await fetch("/api/projects", { cache: "no-store" }); }
+  catch { throw new Error("Kan de lokale server niet bereiken. Draait Bis Alles nog?"); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(`De server gaf een fout: ${data.error || res.status}. Details staan in het Terminal-venster van Bis Alles.`);
   state.projects = data.projects;
   state.cats = data.categorieen || [];
   document.getElementById("root").textContent = data.root;
@@ -312,4 +315,8 @@ document.addEventListener("keydown", (e) => {
 // Bij terugkomen naar het tabblad opnieuw inlezen (nieuwe mappen, git-status).
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 checkUpdate();
-load().then(loadStatus).catch(() => (document.getElementById("summary").textContent = "Kan de lokale server niet bereiken."));
+load().then(loadStatus).catch((e) => {
+  console.error(e);
+  const msg = e.message.startsWith("De server") || e.message.startsWith("Kan de") ? e.message : `Fout in de pagina: ${e.message}`;
+  document.getElementById("summary").textContent = msg;
+});

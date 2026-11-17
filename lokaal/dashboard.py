@@ -19,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import traceback
 import webbrowser
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -319,8 +320,13 @@ class Handler(BaseHTTPRequestHandler):
         if path == "/api/update-check":
             return self.send(200, update_check())
         if path == "/api/projects":
-            return self.send(200, {"root": str(self.root), "projects": projects(self.root),
-                                   "categorieen": load_config()["categorieen"]})
+            try:
+                return self.send(200, {"root": str(self.root), "projects": projects(self.root),
+                                       "categorieen": load_config()["categorieen"]})
+            except Exception as e:
+                # Fout in een config-bestand of een map: in Terminal de details, op de pagina de kern.
+                traceback.print_exc()
+                return self.send(500, {"error": f"{type(e).__name__}: {e}"})
         if path in STATIC:
             file, ctype = STATIC[path]
             return self.send(200, file.read_bytes(), ctype)
