@@ -1,7 +1,7 @@
 const TOKEN = document.querySelector('meta[name="bis-token"]').content;
 const STATUS_URL = "https://sjoerdjebis.github.io/bis-alles/status.json";
 const LABEL = { ok: "In orde", warn: "Let op", error: "Probleem", unknown: "Onbekend", local: "Lokaal" };
-let state = { projects: [], status: new Map(), statusAt: null, filter: "alles", query: "", sort: "gewijzigd", statusFilter: null, open: new Set() };
+let state = { projects: [], status: new Map(), statusAt: null, filter: "alles", query: "", sort: "gewijzigd", statusFilter: null, open: new Set(), cats: [] };
 
 const rtf = new Intl.RelativeTimeFormat("nl", { numeric: "auto" });
 function ago(iso) {
@@ -82,15 +82,21 @@ const SORTS = {
   gewijzigd: { label: "Laatst gewijzigd", cmp: (a, b) => (modified(b) || 0) - (modified(a) || 0) },
   gemaakt: { label: "Eerst gemaakt", cmp: (a, b) => (created(a) || Infinity) - (created(b) || Infinity) },
   naam: { label: "A–Z", cmp: (a, b) => a.name.localeCompare(b.name, "nl") },
+  categorie: { label: "Categorie", cmp: (a, b) => catIndex(a.category) - catIndex(b.category) || a.name.localeCompare(b.name, "nl") },
 };
+// Volgorde van categorieën uit projecten-lokaal.json; onbekende achteraan.
+const catIndex = (c) => { const i = state.cats.indexOf(c); return i < 0 ? 999 : i; };
 
-function primaryButton(p) {
-  const pr = p.primary;
-  if (!pr) return el("span", { class: "go-none" }, "—");
-  const what = pr.kind === "live" ? pr.target : pr.kind === "npm" ? `npm run ${pr.target.split("::")[1]}` : pr.target;
+function actionButton(p, pr, cls) {
+  const what = pr.kind === "live" ? pr.target : pr.kind === "npm" ? `npm run ${pr.target.split("::")[1]}` : pr.kind === "finder" ? `map ${p.folder}` : pr.target;
   return pr.kind === "live"
-    ? el("a", { class: "go", href: pr.target, target: "_blank", title: what }, `${pr.label} ↗`)
-    : el("button", { class: "go", type: "button", title: what, onclick: () => run(p, pr.kind, pr.target, pr.label) }, `▶ ${pr.label}`);
+    ? el("a", { class: cls, href: pr.target, target: "_blank", title: what }, `${pr.label} ↗`)
+    : el("button", { class: cls, type: "button", title: what, onclick: () => run(p, pr.kind, pr.target, pr.label) }, `▶ ${pr.label}`);
+}
+function primaryButtons(p) {
+  return el("span", { class: "acts" },
+    p.secondary ? actionButton(p, p.secondary, "go2") : null,
+    p.primary ? actionButton(p, p.primary, "go") : el("span", { class: "go-none" }, "—"));
 }
 
 function details(p) {
@@ -103,7 +109,7 @@ function details(p) {
   }
 
   const pr = p.primary;
-  const same = (a) => pr && a.kind === pr.kind && a.target === pr.target;
+  const same = (a) => [p.primary, p.secondary].some((x) => x && a.kind === x.kind && a.target === x.target);
   const rest = [
     ...p.actions.filter((a) => !same(a)).map((a) => el("button", { class: "run", type: "button", title: a.target, onclick: () => run(p, a.kind, a.target, a.label) }, a.label)),
     ...(p.live && pr?.kind !== "live" ? [el("a", { href: p.live, target: "_blank" }, "Online ↗")] : []),
@@ -150,7 +156,7 @@ function row(p) {
   const g = p.git.find((x) => x.changes || x.ahead);
   const note = problem ? el("span", { class: `note ${problem.level}` }, problem.text)
     : g ? el("span", { class: "note warn" }, g.ahead ? "niet gepusht" : "niet gecommit") : null;
-  const meta = [p.category, p.platform].filter(Boolean).join(" · ");
+  const meta = [...new Set([p.category, p.platform].filter(Boolean))].join(" · ");
   const sortKey = state.sort === "gemaakt" ? created(p) : modified(p);
   const date = isNaN(sortKey) ? "–" : ago(new Date(sortKey).toISOString());
 
@@ -160,7 +166,7 @@ function row(p) {
       el("span", { class: "title" }, el("span", { class: "name" }, p.name), el("span", { class: "meta" }, meta, note ? " · " : null, note))),
     el("span", { class: `pill ${o}` }, LABEL[o] || o),
     el("span", { class: "when", title: state.sort === "gemaakt" ? "gemaakt" : "laatst gewijzigd" }, date),
-    primaryButton(p),
+    primaryButtons(p),
     el("button", { class: "chev", type: "button", "aria-label": open ? "Inklappen" : "Uitklappen", "aria-expanded": String(open), onclick: toggle }, open ? "▾" : "▸"),
   );
   if (open) node.append(details(p));
@@ -180,7 +186,7 @@ function render() {
     ...["error", "warn", "unknown", "ok", "local"].filter((k) => counts[k]).map((k) => chip(k, counts[k], LABEL[k].toLowerCase(), k)),
     ...(nDirty ? [chip("dirty", nDirty, "niet opgeslagen", "warn")] : []));
 
-  const cats = ["alles", ...new Set(projects.map((p) => p.category))];
+  const cats = ["alles", ...[...new Set(projects.map((p) => p.category))].sort((a, b) => catIndex(a) - catIndex(b))];
   document.getElementById("filters").replaceChildren(...cats.map((c) =>
     el("button", { type: "button", "aria-pressed": String(c === filter), onclick: () => { state.filter = c; save("bis-lokaal-filter", c); render(); } },
       c.charAt(0).toUpperCase() + c.slice(1))));
@@ -203,6 +209,7 @@ async function load() {
   const res = await fetch("/api/projects", { cache: "no-store" });
   const data = await res.json();
   state.projects = data.projects;
+  state.cats = data.categorieen || [];
   document.getElementById("root").textContent = data.root;
   render();
 }

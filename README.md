@@ -58,8 +58,12 @@ status uit `status.json` en de git-status (niet gecommit of niet gepusht).
   "Meer". Zonder instelling kiest hij zelf: de online site, anders het enige `.command`-bestand,
   anders `index.html` of het enige HTML-bestand, anders `npm run dev`/`start`. Wil je iets anders,
   zet dan `start` in `projecten-lokaal.json`: een bestand in de map (`"Typecursus.html"`, een
-  `.command`, `.py`, `.xlsx`, `.pptx` …), `"npm:dev"`, `"live"`, een `https://`-adres of `false`
-  (geen hoofdknop). `startLabel` geeft de knop een eigen tekst; `open` is een adres dat de
+  `.command`, `.py`, `.xlsx`, `.pptx` …), `"npm:dev"`, `"live"`, een `https://`-adres, `"map"`
+  (de map in Finder), `"chrome://…"` (in Chrome), `"cmd:<label>"` (een eigen command) of `false`
+  (geen hoofdknop). `start2` is een tweede knop ernaast, met dezelfde mogelijkheden. Eigen commands
+  zet je in `commands`: `[{"label": "…", "run": "…"}]`; ze draaien in Terminal in de projectmap en
+  werken alleen vanuit `projecten-lokaal.json`. `categorieen` daarin bepaalt de volgorde van de
+  categorieën (filterknoppen en sorteren op Categorie). `startLabel` geeft de knop een eigen tekst; `open` is een adres dat de
   browser opent een paar seconden na het starten (bijv. `http://localhost:3000`).
 - **Bijwerken:** de knop rechtsboven haalt de nieuwste versie op (`git pull`) en herstart het
   dashboard. Staat er iets nieuws op GitHub, dan staat er "Bijwerken (n nieuw)".
